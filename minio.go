@@ -5,9 +5,9 @@ import (
 	"context"
 	"crypto/sha1"
 	"encoding/hex"
-	"fmt"
 	"io"
 	"path/filepath"
+	"strconv"
 	"time"
 
 	"github.com/minio/minio-go/v7"
@@ -33,7 +33,7 @@ func (m *minioss) Put(ctx context.Context, ext string, data []byte) (string, err
 
 func (m *minioss) PutReader(ctx context.Context, ext string, r io.Reader, l int64) (string, error) {
 	t := time.Now()
-	n := filepath.Join(m.prefix, t.Format("2006"), t.Format("01"), t.Format("02"), sha(fmt.Sprint(t.UnixNano()))+"."+ext)
+	n := filepath.Join(m.prefix, t.Format("2006/01/02"), sha(strconv.Itoa(int(t.UnixNano())))+"."+ext)
 	_, err := m.c.PutObject(ctx, m.bucket, n, r, l, minio.PutObjectOptions{})
 	return n, err
 }
@@ -46,7 +46,7 @@ func (m *minioss) Get(ctx context.Context, name string) ([]byte, error) {
 	return io.ReadAll(r)
 }
 
-func (m *minioss) GetReader(ctx context.Context, name string) (io.Reader, error) {
+func (m *minioss) GetReader(ctx context.Context, name string) (io.ReadCloser, error) {
 	return m.c.GetObject(ctx, m.bucket, name, minio.GetObjectOptions{})
 }
 

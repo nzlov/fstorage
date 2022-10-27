@@ -10,7 +10,7 @@ type FOss interface {
 	Put(ctx context.Context, ext string, data []byte) (string, error)
 	PutReader(ctx context.Context, ext string, r io.Reader, l int64) (string, error)
 	Get(ctx context.Context, name string) ([]byte, error)
-	GetReader(ctx context.Context, name string) (io.Reader, error)
+	GetReader(ctx context.Context, name string) (io.ReadCloser, error)
 	Del(ctx context.Context, name string) error
 }
 
@@ -55,7 +55,7 @@ func (f *FStorage) Get(ctx context.Context, name string) ([]byte, error) {
 	return f.oss.Get(ctx, name)
 }
 
-func (f *FStorage) GetReader(ctx context.Context, name string) (io.Reader, error) {
+func (f *FStorage) GetReader(ctx context.Context, name string) (io.ReadCloser, error) {
 	return f.oss.GetReader(ctx, name)
 }
 

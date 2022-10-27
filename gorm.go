@@ -43,11 +43,11 @@ func (g *gormdb) Create(ctx context.Context, name string) error {
 }
 
 func (g *gormdb) Del(ctx context.Context, name string) error {
-	if err := g.db.Where("name = ?", name).Delete(new(GormFileUse)).Error; err != nil {
+	if err := g.db.Unscoped().Where("name = ?", name).Delete(new(GormFileUse)).Error; err != nil {
 		return err
 	}
 
-	return g.db.Where("name = ?", name).Delete(new(GormFile)).Error
+	return g.db.Unscoped().Where("name = ?", name).Delete(new(GormFile)).Error
 }
 
 func (g *gormdb) Check(ctx context.Context, names ...string) (bool, error) {
@@ -85,7 +85,7 @@ func (g *gormdb) UnUse(ctx context.Context, who string, names ...string) error {
 	if len(ss) == 0 {
 		return fmt.Errorf("fstorage unuse no params")
 	}
-	return g.db.Where(strings.Join(ss, " and "), vs...).Delete([]GormFileUse{}).Error
+	return g.db.Where(strings.Join(ss, " and "), vs...).Unscoped().Delete([]GormFileUse{}).Error
 }
 
 func (g *gormdb) Clean(ctx context.Context, t time.Time, cb func(name string) error) error {
