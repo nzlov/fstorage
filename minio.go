@@ -43,6 +43,7 @@ func (m *minioss) Get(ctx context.Context, name string) ([]byte, error) {
 	if err != nil {
 		return nil, err
 	}
+	defer r.Close()
 	return io.ReadAll(r)
 }
 
