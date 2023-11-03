@@ -7,6 +7,7 @@ import (
 	"os"
 	"path/filepath"
 	"strconv"
+	"strings"
 	"time"
 )
 
@@ -22,12 +23,27 @@ func NewLocalOSS(path string) *localoss {
 	}
 }
 
-func (m *localoss) Put(ctx context.Context, ext string, data []byte) (string, error) {
+func (m *localoss) Put(
+	ctx context.Context,
+	ext string,
+	data []byte,
+) (string, error) {
 	return m.PutReader(ctx, ext, bytes.NewReader(data), int64(len(data)))
 }
 
-func (m *localoss) PutReader(ctx context.Context, ext string, r io.Reader, l int64) (string, error) {
-	name := sha(strconv.Itoa(int(time.Now().UnixNano()))) + "." + ext
+func (m *localoss) PutReader(
+	ctx context.Context,
+	ext string,
+	r io.Reader,
+	l int64,
+) (string, error) {
+	name := sha(strconv.Itoa(int(time.Now().UnixNano())))
+	if strings.HasPrefix(ext, ".") {
+		name += ext
+	} else {
+		name += "." + ext
+	}
+
 	if _, ok := m.lm[name[:4]]; !ok {
 		if err := os.MkdirAll(filepath.Join(m.path, name[:2], name[2:4]), 0700); err != nil {
 			return "", err
@@ -56,7 +72,10 @@ func (m *localoss) Get(ctx context.Context, name string) ([]byte, error) {
 	return io.ReadAll(r)
 }
 
-func (m *localoss) GetReader(ctx context.Context, name string) (io.ReadCloser, error) {
+func (m *localoss) GetReader(
+	ctx context.Context,
+	name string,
+) (io.ReadCloser, error) {
 	return os.Open(filepath.Join(m.path, name))
 }
 
