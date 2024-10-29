@@ -3,6 +3,8 @@ package fstorage
 import (
 	"bytes"
 	"context"
+	"crypto/sha1"
+	"encoding/hex"
 	"io"
 	"os"
 	"path/filepath"
@@ -81,4 +83,10 @@ func (m *localoss) GetReader(
 
 func (m *localoss) Del(ctx context.Context, name string) error {
 	return os.Remove(filepath.Join(m.path, name))
+}
+
+func sha(s string) string {
+	m := sha1.New()
+	m.Write([]byte(s))
+	return hex.EncodeToString(m.Sum(nil))
 }

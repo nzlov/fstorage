@@ -1,4 +1,4 @@
-package fstorage
+package ossminio
 
 import (
 	"bytes"

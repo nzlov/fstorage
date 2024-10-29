@@ -1,4 +1,4 @@
-package fstorage
+package dbgorm
 
 import (
 	"context"
