@@ -1,7 +1,6 @@
 package fstorage
 
 import (
-	"bytes"
 	"context"
 	"crypto/sha1"
 	"encoding/hex"
@@ -15,22 +14,12 @@ import (
 
 type localoss struct {
 	path string
-	lm   map[string]struct{}
 }
 
 func NewLocalOSS(path string) *localoss {
 	return &localoss{
 		path: path,
-		lm:   map[string]struct{}{},
 	}
-}
-
-func (m *localoss) Put(
-	ctx context.Context,
-	ext string,
-	data []byte,
-) (string, error) {
-	return m.PutReader(ctx, ext, bytes.NewReader(data), int64(len(data)))
 }
 
 func (m *localoss) PutReader(
@@ -46,12 +35,10 @@ func (m *localoss) PutReader(
 		name += "." + ext
 	}
 
-	if _, ok := m.lm[name[:4]]; !ok {
-		if err := os.MkdirAll(filepath.Join(m.path, name[:2], name[2:4]), 0700); err != nil {
-			return "", err
-		}
-		m.lm[name[:4]] = struct{}{}
+	if err := os.MkdirAll(filepath.Join(m.path, name[:2], name[2:4]), 0o700); err != nil {
+		return "", err
 	}
+
 	n := filepath.Join(name[:2], name[2:4], name)
 
 	file, err := os.Create(filepath.Join(m.path, n))
@@ -63,15 +50,6 @@ func (m *localoss) PutReader(
 		return "", err
 	}
 	return n, nil
-}
-
-func (m *localoss) Get(ctx context.Context, name string) ([]byte, error) {
-	r, err := m.GetReader(ctx, name)
-	if err != nil {
-		return nil, err
-	}
-	defer r.Close()
-	return io.ReadAll(r)
 }
 
 func (m *localoss) GetReader(

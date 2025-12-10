@@ -11,5 +11,6 @@ func (testdb) Create(ctx context.Context, name string) error                    
 func (testdb) Del(ctx context.Context, name string) error                               { return nil }
 func (testdb) Check(ctx context.Context, names ...string) (bool, error)                 { return true, nil }
 func (testdb) Use(ctx context.Context, who string, names ...string) error               { return nil }
+func (testdb) UseCheck(ctx context.Context, name string) (bool, error)                  { return false, nil }
 func (testdb) UnUse(ctx context.Context, who string, names ...string) error             { return nil }
 func (testdb) Clean(ctx context.Context, t time.Time, cb func(name string) error) error { return nil }

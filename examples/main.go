@@ -8,6 +8,8 @@ import (
 	"github.com/minio/minio-go/v7"
 	"github.com/minio/minio-go/v7/pkg/credentials"
 	"github.com/nzlov/fstorage"
+	"github.com/nzlov/fstorage/dbgorm"
+	"github.com/nzlov/fstorage/ossminio"
 	"gorm.io/driver/sqlite"
 	"gorm.io/gorm"
 )
@@ -25,13 +27,16 @@ func main() {
 	if err != nil {
 		panic(err)
 	}
-	oss := fstorage.NewMiniOSS(minioClient, "demo", "debug")
+	oss := ossminio.NewMiniOSS(minioClient, "demo", "debug")
 
 	gdb, err := gorm.Open(sqlite.Open("gorm.db"))
 	if err != nil {
 		panic(err)
 	}
-	db := fstorage.NewGorm(gdb)
+	db, err := dbgorm.NewGormWithInit(gdb)
+	if err != nil {
+		panic(err)
+	}
 
 	fs := fstorage.NewFstorage(oss, db)
 	ctx := context.Background()

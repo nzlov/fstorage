@@ -70,9 +70,17 @@ func (g *gormdb) Use(ctx context.Context, who string, names ...string) error {
 	return nil
 }
 
+func (g *gormdb) UseCheck(ctx context.Context, name string) (bool, error) {
+	n := int64(0)
+	if err := g.db.Model(new(GormFileUse)).Where("name = ?", name).Count(&n).Error; err != nil {
+		return false, err
+	}
+	return int(n) > 0, nil
+}
+
 func (g *gormdb) UnUse(ctx context.Context, who string, names ...string) error {
 	ss := []string{}
-	vs := []interface{}{}
+	vs := []any{}
 
 	if len(names) != 0 {
 		ss = append(ss, "name in (?)")
