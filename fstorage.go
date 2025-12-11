@@ -34,6 +34,14 @@ type FDB interface {
 	Clean(ctx context.Context, t time.Time, cb func(name string) error) error
 }
 
+type fstorageCtxKey string
+
+var _fstorageCtxKey fstorageCtxKey = "@nzlov@fstorage"
+
+func For(ctx context.Context) *FStorage {
+	return ctx.Value(_fstorageCtxKey).(*FStorage)
+}
+
 type FStorage struct {
 	oss FOss
 	db  FDB
@@ -44,6 +52,10 @@ func NewFstorage(oss FOss, db FDB) *FStorage {
 		oss: oss,
 		db:  db,
 	}
+}
+
+func (f *FStorage) Context(ctx context.Context) context.Context {
+	return context.WithValue(ctx, _fstorageCtxKey, f)
 }
 
 // Put upload file
