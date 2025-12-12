@@ -5,6 +5,7 @@ import (
 	"testing"
 	"time"
 
+	"github.com/nzlov/fstorage"
 	"gorm.io/driver/sqlite"
 	"gorm.io/gorm"
 )
@@ -22,7 +23,11 @@ func TestGorm(t *testing.T) {
 	}
 	name := "a"
 	who := "who"
-	if err := fdb.Create(context.Background(), name); err != nil {
+	if err := fdb.Create(context.Background(), fstorage.File{
+		ID:       name,
+		Filename: name,
+		Path:     name,
+	}); err != nil {
 		t.Fatal("gorm create error:", err)
 	}
 	{
@@ -51,7 +56,7 @@ func TestGorm(t *testing.T) {
 		if err := db.Where("who = ?", who).First(&gfs).Error; err != nil {
 			t.Fatal("gorm find error:", err)
 		}
-		if gfs.Who != who || gfs.Name != name {
+		if gfs.Who != who || gfs.UID != name {
 			t.Fatal("gorm use error: who or name no match")
 		}
 	}
@@ -88,13 +93,19 @@ func TestGorm(t *testing.T) {
 	}
 
 	{
-		if err := fdb.Create(context.Background(), name); err != nil {
+		if err := fdb.Create(context.Background(), fstorage.File{
+			ID: name,
+		}); err != nil {
 			t.Fatal("gorm create error:", err)
 		}
-		if err := fdb.Create(context.Background(), name+"2"); err != nil {
+		if err := fdb.Create(context.Background(), fstorage.File{
+			ID: name + "2",
+		}); err != nil {
 			t.Fatal("gorm create error:", err)
 		}
-		if err := fdb.Create(context.Background(), name+"3"); err != nil {
+		if err := fdb.Create(context.Background(), fstorage.File{
+			ID: name + "3",
+		}); err != nil {
 			t.Fatal("gorm create error:", err)
 		}
 		if err := fdb.Use(context.Background(), who, name); err != nil {

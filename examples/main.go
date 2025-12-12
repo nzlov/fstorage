@@ -41,7 +41,7 @@ func main() {
 	fs := fstorage.NewFstorage(oss, db)
 	ctx := context.Background()
 	// name := "debug/2022/02/10/575d07359f559a49507021618d533ac52307320b.txt"
-	name, err := fs.Put(ctx, "txt", []byte("asd"))
+	name, err := fs.Put(ctx, "a.txt", "txt", []byte("asd"))
 	if err != nil {
 		panic(err)
 	}

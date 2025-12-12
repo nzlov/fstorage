@@ -5,7 +5,10 @@ import (
 	"context"
 	"fmt"
 	"io"
+	"strings"
 	"time"
+
+	"github.com/google/uuid"
 )
 
 type FOss interface {
@@ -17,21 +20,29 @@ type FOss interface {
 	Del(ctx context.Context, name string) error
 }
 
+type File struct {
+	ID       string `json:"id"`
+	Filename string `json:"filename"`
+	Path     string `json:"path"`
+}
+
 type FDB interface {
 	// Create file record
-	Create(ctx context.Context, name string) error
+	Create(ctx context.Context, file File) error
+	// Get file
+	Get(ctx context.Context, ids ...string) ([]File, error)
 	// Del delete file
-	Del(ctx context.Context, name string) error
+	Del(ctx context.Context, id string) error
 	// Check check file exits
-	Check(ctx context.Context, names ...string) (bool, error)
+	Check(ctx context.Context, ids ...string) (bool, error)
 	// Use use file
-	Use(ctx context.Context, who string, names ...string) error
+	Use(ctx context.Context, who string, ids ...string) error
 	// UseCheck use file check
-	UseCheck(ctx context.Context, name string) (bool, error)
+	UseCheck(ctx context.Context, id string) (bool, error)
 	// UnUse unuse file
-	UnUse(ctx context.Context, who string, names ...string) error
+	UnUse(ctx context.Context, who string, ids ...string) error
 	// Clean clean file with not use file
-	Clean(ctx context.Context, t time.Time, cb func(name string) error) error
+	Clean(ctx context.Context, t time.Time, cb func(path string) error) error
 }
 
 type fstorageCtxKey string
@@ -58,27 +69,32 @@ func (f *FStorage) Context(ctx context.Context) context.Context {
 	return context.WithValue(ctx, _fstorageCtxKey, f)
 }
 
-// Put upload file
-func (f *FStorage) Put(ctx context.Context, ext string, data []byte) (string, error) {
-	name, err := f.oss.PutReader(ctx, ext, bytes.NewBuffer(data), int64(len(data)))
+// Put upload file. return id
+func (f *FStorage) Put(ctx context.Context, name, ext string, data []byte) (string, error) {
+	return f.PutReader(ctx, name, ext, bytes.NewBuffer(data), int64(len(data)))
+}
+
+// PutReader upload file by reader. return id
+func (f *FStorage) PutReader(ctx context.Context, name, ext string, r io.Reader, l int64) (string, error) {
+	path, err := f.oss.PutReader(ctx, ext, r, l)
 	if err != nil {
 		return "", err
 	}
-	return name, f.db.Create(ctx, name)
-}
-
-// PutReader upload file by reader
-func (f *FStorage) PutReader(ctx context.Context, ext string, r io.Reader, l int64) (string, error) {
-	name, err := f.oss.PutReader(ctx, ext, r, l)
+	id, err := uuid.NewV7()
 	if err != nil {
 		return "", err
 	}
-	return name, f.db.Create(ctx, name)
+	ids := strings.ReplaceAll(id.String(), "-", "")
+	return ids, f.db.Create(ctx, File{
+		ID:       ids,
+		Filename: name,
+		Path:     path,
+	})
 }
 
-// Get get file
-func (f *FStorage) Get(ctx context.Context, name string) ([]byte, error) {
-	r, err := f.GetReader(ctx, name)
+// Get get file by id
+func (f *FStorage) Get(ctx context.Context, id string) ([]byte, error) {
+	r, err := f.GetReader(ctx, id)
 	if err != nil {
 		return nil, err
 	}
@@ -86,29 +102,34 @@ func (f *FStorage) Get(ctx context.Context, name string) ([]byte, error) {
 	return io.ReadAll(r)
 }
 
-// GetReader get file reader
-func (f *FStorage) GetReader(ctx context.Context, name string) (io.ReadCloser, error) {
-	return f.oss.GetReader(ctx, name)
+// GetFile get file by id
+func (f *FStorage) GetFile(ctx context.Context, ids ...string) ([]File, error) {
+	return f.db.Get(ctx, ids...)
 }
 
-// Check check file
-func (f *FStorage) Check(ctx context.Context, names ...string) (bool, error) {
-	return f.db.Check(ctx, names...)
+// GetReader get file reader by id
+func (f *FStorage) GetReader(ctx context.Context, id string) (io.ReadCloser, error) {
+	return f.oss.GetReader(ctx, id)
 }
 
-// Use use file
-func (f *FStorage) Use(ctx context.Context, who string, names ...string) error {
-	return f.db.Use(ctx, who, names...)
+// Check check file by id list
+func (f *FStorage) Check(ctx context.Context, ids ...string) (bool, error) {
+	return f.db.Check(ctx, ids...)
 }
 
-// UnUse unuse file
-func (f *FStorage) UnUse(ctx context.Context, who string, names ...string) error {
-	return f.db.UnUse(ctx, who, names...)
+// Use use file by id list
+func (f *FStorage) Use(ctx context.Context, who string, ids ...string) error {
+	return f.db.Use(ctx, who, ids...)
 }
 
-// Del delete file
-func (f *FStorage) Del(ctx context.Context, names ...string) error {
-	for _, v := range names {
+// UnUse unuse file by id list
+func (f *FStorage) UnUse(ctx context.Context, who string, ids ...string) error {
+	return f.db.UnUse(ctx, who, ids...)
+}
+
+// Del delete file by id list
+func (f *FStorage) Del(ctx context.Context, ids ...string) error {
+	for _, v := range ids {
 		if u, err := f.db.UseCheck(ctx, v); err != nil {
 			return err
 		} else if u {
@@ -124,9 +145,10 @@ func (f *FStorage) Del(ctx context.Context, names ...string) error {
 	return nil
 }
 
+// Clean clean unuse file with last update time
 func (f *FStorage) Clean(ctx context.Context, befor time.Time) error {
-	return f.db.Clean(ctx, befor, func(name string) error {
-		return f.oss.Del(ctx, name)
+	return f.db.Clean(ctx, befor, func(path string) error {
+		return f.oss.Del(ctx, path)
 	})
 }
 

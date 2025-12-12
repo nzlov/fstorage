@@ -12,7 +12,7 @@ func TestLocalOss(t *testing.T) {
 	defer os.RemoveAll("./local")
 	fs := NewFstorage(local, testdb{})
 
-	path, err := fs.Put(context.Background(), "txt", []byte("asd"))
+	path, err := fs.Put(context.Background(), "a.name", "txt", []byte("asd"))
 	if err != nil {
 		t.Fatal("local put error:", err)
 	}
