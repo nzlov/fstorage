@@ -70,26 +70,27 @@ func (f *FStorage) Context(ctx context.Context) context.Context {
 }
 
 // Put upload file. return id
-func (f *FStorage) Put(ctx context.Context, name, ext string, data []byte) (string, error) {
+func (f *FStorage) Put(ctx context.Context, name, ext string, data []byte) (*File, error) {
 	return f.PutReader(ctx, name, ext, bytes.NewBuffer(data), int64(len(data)))
 }
 
 // PutReader upload file by reader. return id
-func (f *FStorage) PutReader(ctx context.Context, name, ext string, r io.Reader, l int64) (string, error) {
+func (f *FStorage) PutReader(ctx context.Context, name, ext string, r io.Reader, l int64) (*File, error) {
 	path, err := f.oss.PutReader(ctx, ext, r, l)
 	if err != nil {
-		return "", err
+		return nil, err
 	}
 	id, err := uuid.NewV7()
 	if err != nil {
-		return "", err
+		return nil, err
 	}
 	ids := strings.ReplaceAll(id.String(), "-", "")
-	return ids, f.db.Create(ctx, File{
+	file := File{
 		ID:       ids,
 		Filename: name,
 		Path:     path,
-	})
+	}
+	return &file, f.db.Create(ctx, file)
 }
 
 // Get get file by id
