@@ -110,7 +110,11 @@ func (f *FStorage) GetFile(ctx context.Context, ids ...string) ([]File, error) {
 
 // GetReader get file reader by id
 func (f *FStorage) GetReader(ctx context.Context, id string) (io.ReadCloser, error) {
-	return f.oss.GetReader(ctx, id)
+	fs, err := f.GetFile(ctx, id)
+	if err != nil {
+		return nil, err
+	}
+	return f.oss.GetReader(ctx, fs[0].Path)
 }
 
 // Check check file by id list
