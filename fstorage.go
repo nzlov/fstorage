@@ -24,6 +24,7 @@ type File struct {
 	ID       string `json:"id"`
 	Filename string `json:"filename"`
 	Path     string `json:"path"`
+	Size     int64  `json:"size"`
 }
 
 type FDB interface {
@@ -89,6 +90,7 @@ func (f *FStorage) PutReader(ctx context.Context, name, ext string, r io.Reader,
 		ID:       ids,
 		Filename: name,
 		Path:     path,
+		Size:     l,
 	}
 	return &file, f.db.Create(ctx, file)
 }
