@@ -16,6 +16,7 @@ type GormFile struct {
 	UID  string `gorm:"index"`
 	Name string
 	Path string
+	Size int64
 }
 
 type GormFileUse struct {
@@ -46,6 +47,7 @@ func (g *gormdb) Create(ctx context.Context, file fstorage.File) error {
 		UID:  file.ID,
 		Name: file.Filename,
 		Path: file.Path,
+		Size: file.Size,
 	}).Error
 }
 
