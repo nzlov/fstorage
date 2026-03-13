@@ -63,6 +63,7 @@ func (g *gormdb) Get(ctx context.Context, ids ...string) ([]fstorage.File, error
 			ID:       v.UID,
 			Filename: v.Name,
 			Path:     v.Path,
+			Size:     v.Size,
 		}
 	}
 	return files, nil
